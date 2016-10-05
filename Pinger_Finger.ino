@@ -20,7 +20,7 @@
 #include <SPI.h>
 #include <Ethernet.h>
 #include <Thread.h>
-
+int FirstRun = 0;
 int PreBootCounter = 0;
 int RebootEnabled = 1;
 byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED}; // mac address for ethernet shield
@@ -33,7 +33,7 @@ IPAddress subnet(255, 255, 255, 0);
 //the IP address is dependent on your network
 IPAddress ip(10, 1, 1, 100);
 //The Ip To Ping
-byte ServerAddr[] = {192,168,1,251}; // ip address to ping
+byte ServerAddr[] = {10, 1, 1, 13}; // ip address to ping
 //char ServerAddr[] = "www.arduino.cc";
 // Initialize the Ethernet server library
 // with the IP address and port you want to use
@@ -70,7 +70,7 @@ void ClientSuccess()
 {
   digitalWrite(ledFail, off);
   digitalWrite(ledOk, on);
-  Serial.println("Client Connected OK...");
+  Serial.println(F("Client Connected OK..."));
   RebootEnabled = 1;
   PreBootCounter = 0;
 }
@@ -79,7 +79,7 @@ void ClientFail()
 {
   digitalWrite(ledFail, on);
   digitalWrite(ledOk, off);
-  Serial.println("Client Connection Failed...");
+  Serial.println(F("Client Connection Failed..."));
   PreBootCounter++;
 }
 
@@ -91,7 +91,7 @@ void httpRequest() {
 
   // if there's a successful connection:
   if (client.connect(ServerAddr, 8003)) {
-    Serial.println("connected...");
+    Serial.println(F("connected..."));
     // send the HTTP GET request:
     client.println("GET /index.html HTTP/1.1");
     client.println("Host: www.arduino.cc");
@@ -104,7 +104,7 @@ void httpRequest() {
     ClientSuccess();    
   } else {
     // if you couldn't make a connection:
-    Serial.println("connection failed");
+    Serial.println(F("connection failed"));
     ClientFail();
   }
 }
@@ -114,16 +114,17 @@ Thread ClientThread = Thread();
 
 // callback for myThread
 void ClientThreadCallback(){
-  Serial.println("ClientThread\tcallback");
+  Serial.println(F("ClientThread callback"));
     ClientStart();
     // if there's incoming data from the net connection.
     // send it out the serial port.  This is for debugging
     // purposes only:
-    //if (client.available()) {
-    //  char c = client.read();
-    //  Serial.write(c);
-    //}
-    
+    if (client.available()) {
+      char c = client.read();
+      Serial.write(c);
+    }
+    Serial.print(F("First Run: "));
+    Serial.println(FirstRun);
     // if ten seconds have passed since your last connection,
     // then connect again and send data:
     if (millis() - lastConnectionTime > delayMS) {
@@ -154,7 +155,6 @@ void Blink(int DigitalPin){
   digitalWrite(DigitalPin, on);
   delay(1000);
   digitalWrite(DigitalPin, off);
-
 }
 
 void setup()
@@ -169,12 +169,6 @@ void setup()
   pinMode(relayPin, OUTPUT);
   digitalWrite(relayPin, off);
   
-  // blink  all LEDs on
-  Blink(ledFail);
-  Blink(ledPing);
-  Blink(ledOk);
-  digitalWrite(ledOk, on);
-
   // start serial port:
   Serial.begin(9600);
   Serial.println("Starting ethernet connection");
@@ -183,16 +177,32 @@ void setup()
   Ethernet.begin(mac, ip, dnServer, gateway, subnet);
   //Ethernet.begin(mac, ip);
   server.begin();
-  Serial.print("Pinger is at ");
+  Serial.print(F("Pinger is at "));
   Serial.println(Ethernet.localIP());
-  
+
+    // blink  all LEDs on
+  Serial.println(F("Testing RED LED."));
+  Blink(ledFail);
+  Serial.println(F("Testing BLUE LED."));
+  Blink(ledPing);
+  Serial.println(F("Testing GREEN LED."));
+  Blink(ledOk);
+  digitalWrite(ledOk, on);
 
 }
 
 void loop()
 {
-    noInterrupts(); // Call to disable interrupts
-     EthernetClient client = server.available();
+  if (FirstRun == 0){
+    Serial.println(F("First Run Connection Start..."));
+    httpRequest();
+    FirstRun = 1;
+    Serial.println(F("First Run Connection Finished..."));
+    Serial.println(lastConnectionTime);
+  }
+  
+  noInterrupts(); // Call to disable interrupts
+  EthernetClient client = server.available();
   if (client) {
     while (client.connected()) {   
       if (client.available()) {
