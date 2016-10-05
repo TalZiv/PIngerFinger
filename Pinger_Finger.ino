@@ -209,50 +209,39 @@ void loop()
          if (c == '\n') {          
           Serial.println(readString); //print to serial monitor for debuging
           client.println("HTTP/1.1 200 OK"); //send new page
-          client.println("Content-Type: text/html");
+          client.println(F("Content-Type: text/html"));
           client.println();     
-          client.println("<HTML>");
-          client.println("<HEAD>");
-          client.println("<meta name='apple-mobile-web-app-capable' content='yes' />");
-          client.println("<meta name='apple-mobile-web-app-status-bar-style' content='black-translucent' />");
-          client.println("<link rel='stylesheet' type='text/css' href='http://randomnerdtutorials.com/ethernetcss.css' />");
-          client.println("<TITLE>The Pinger Finger - Tal Ziv</TITLE>");
-          client.println("</HEAD>");
-          client.println("<H1>The Pinger Finger v1</H1>");
-          client.println("<hr />");
-          client.println("<br />");  
-          client.println("<H2>Status And details</H2>");
-          client.println("<br />");
-          client.println("<br />");
-          client.print("My IP: ");
+          client.println(F("<HTML>"));
+          client.println(F("<HEAD>"));
+          client.println(F("<meta name='apple-mobile-web-app-capable' content='yes' />"));
+          client.println(F("<meta name='apple-mobile-web-app-status-bar-style' content='black-translucent' />"));
+          client.println(F("<link rel='stylesheet' type='text/css' href='http://randomnerdtutorials.com/ethernetcss.css' />"));
+          client.println(F("<TITLE>The Pinger Finger - Tal Ziv</TITLE>"));
+          client.println(F("</HEAD>"));
+          client.println(F("<H1>The Pinger Finger v1</H1>"));
+          client.println(F("<hr />"));
+          client.println(F("<H2>Status And details</H2>"));
+          client.println(F("<br />"));
+          client.print(F("My IP: "));
           client.println(Ethernet.localIP());
-          client.println("<br />");
-          client.println("Ping Destination: 192.168.1.251 <br />");
-          client.print("Web GET DealyInSec: ");
+          client.println(F("<br />Ping Destination: 192.168.1.251 <br />"));
+          client.print(F("Web GET DealyInSec: "));
           client.println(delaySEC);
-          client.println("<br />");
-          client.print("How Many Failes takes to do a Reboot: ");
+          client.print(F("<br />How Many Failes takes to do a Reboot: "));
           client.println(HowManyFailes);
-          client.println("<br />");
-          client.print("PreBootCounter: ");
+          client.print(F("<br />PreBootCounter: "));
           client.println(PreBootCounter);
-          client.println("<br />");
-          client.print("RebootEnabled: ");
+          client.print(F("<br />RebootEnabled: "));
           client.println(RebootEnabled);
-          client.println("<br /><br />");
+          client.println(F("<br /><br />"));
           if(PreBootCounter >= HowManyFailes && RebootEnabled == 0){
-            client.println("NAS was Rebooted<br />NAS Still Down...<br />No Need To Reboot Again...<br />Waiting...");
-            client.println("<br /><br />");
+            client.println(F("NAS was Rebooted<br />NAS Still Down...<br />No Need To Reboot Again...<br />Waiting...<br /><br />"));
           }
-          client.println("<a href=\"/?button1on\"\">Hold RESET Button</a>");
-          client.println("<a href=\"/?button1off\"\">Release RESET Button</a><br />");   
-          client.println("<br />");     
-          client.println("<br />"); 
-          client.println("<p>Created by Tal Ziv.</p>");  
-          client.println("<br />"); 
-          client.println("</BODY>");
-          client.println("</HTML>");
-     
+          client.println(F("<a href=\"/?button1on\"\">Hold RESET Button</a>"));
+          client.println(F("<a href=\"/?button1off\"\">Release RESET Button</a><br /><br /><br />"));
+          client.println(F("<p>Created by Tal Ziv.</p><br />"));  
+          client.println(F("</BODY></HTML>"));
+    
           delay(1);
           //stopping client
           client.stop();
