@@ -40,7 +40,7 @@ byte ServerAddr[] = {192,168,1,251}; // ip address to ping
 // (port 80 is default for HTTP):
 EthernetServer server(80);
 EthernetClient client;
-
+String readString;
 
 const long delayMS = 30L * 1000L; // delay between successive pings (60 * 1000 = 60 seconds) the L is for the long datatype
 long delaySEC = delayMS / 1000; // delay between successive pings (60 * 1000 = 60 seconds) the L is for the long datatype
@@ -53,21 +53,23 @@ int HowManyFailes = 50;
 #define ledOk 3
 #define ledFail 4
 #define relayPin 5
+#define on LOW
+#define off HIGH
 
 void ClientStart()
 {
-  digitalWrite(ledPing, LOW);
+  digitalWrite(ledPing, on);
 }
 
 void ClientEnd()
 {
-  digitalWrite(ledPing, HIGH);
+  digitalWrite(ledPing, off);
 }
 
 void ClientSuccess()
 {
-  digitalWrite(ledFail, HIGH);
-  digitalWrite(ledOk, LOW);
+  digitalWrite(ledFail, off);
+  digitalWrite(ledOk, on);
   Serial.println("Client Connected OK...");
   RebootEnabled = 1;
   PreBootCounter = 0;
@@ -75,8 +77,8 @@ void ClientSuccess()
 
 void ClientFail()
 {
-  digitalWrite(ledFail, LOW);
-  digitalWrite(ledOk, HIGH);
+  digitalWrite(ledFail, on);
+  digitalWrite(ledOk, off);
   Serial.println("Client Connection Failed...");
   PreBootCounter++;
 }
@@ -138,14 +140,21 @@ void ClientThreadCallback(){
   if(PreBootCounter >= HowManyFailes){
     if(RebootEnabled == 1){
       Serial.println("Rebooting NAS...");
-      digitalWrite(relayPin, LOW);
+      digitalWrite(relayPin, on);
       delay(1000);
-      digitalWrite(relayPin, HIGH);
+      digitalWrite(relayPin, off);
       RebootEnabled = 0;
     }else{
       Serial.println("Nas Still Down... No Reboot Needed... Waiting...");
     }
   }
+}
+
+void Blink(int DigitalPin){
+  digitalWrite(DigitalPin, on);
+  delay(1000);
+  digitalWrite(DigitalPin, off);
+
 }
 
 void setup()
@@ -158,11 +167,13 @@ void setup()
   pinMode(ledOk, OUTPUT);
   pinMode(ledFail, OUTPUT);
   pinMode(relayPin, OUTPUT);
+  digitalWrite(relayPin, off);
   
-  // initialising, turn all LEDs on
-  digitalWrite(ledFail, LOW);
-  digitalWrite(ledOk, LOW);
-  digitalWrite(ledPing, LOW);
+  // blink  all LEDs on
+  Blink(ledFail);
+  Blink(ledPing);
+  Blink(ledOk);
+  digitalWrite(ledOk, on);
 
   // start serial port:
   Serial.begin(9600);
@@ -180,78 +191,89 @@ void setup()
 
 void loop()
 {
-  while(1){
     noInterrupts(); // Call to disable interrupts
-    EthernetClient client = server.available();
-    if (client) {
-      Serial.println("new client");
-      // an http request ends with a blank line
-      boolean currentLineIsBlank = true;
-      while (client.connected()) {
+     EthernetClient client = server.available();
+  if (client) {
+    while (client.connected()) {   
       if (client.available()) {
-      char c = client.read();
-      Serial.write(c);
-      // if you've gotten to the end of the line (received a newline
-      // character) and the line is blank, the http request has ended,
-      // so you can send a reply
-      if (c == '\n' && currentLineIsBlank) {
-        // send a standard http response header
-        client.println("HTTP/1.1 200 OK");
-        client.println("Content-Type: text/html");
-        client.println("Connection: close");  // the connection will be closed after completion of the response
-        //client.println("Refresh: 5");  // refresh the page automatically every 5 sec
-        client.println();
-        client.println("<!DOCTYPE HTML>");
-        client.println("<html>");
-        // output the value of each analog input pin
-        client.println("The Pinger Finger - Tal Ziv");
-        client.println("<br />");
-        client.print("My IP: ");
-        client.println(Ethernet.localIP());
-        client.println("<br />");
-        client.print("Ping Destination: ");
-        client.println("192.168.1.251");
-        client.println("<br />");
-        client.print("Web GET DealyInSec: ");
-        client.println(delaySEC);
-        client.println("<br />");
-        client.print("How Many Failes takes to do a Reboot: ");
-        client.println(HowManyFailes);
-        client.println("<br />");
-        client.print("PreBootCounter: ");
-        client.println(PreBootCounter);
-        client.println("<br />");
-        client.print("RebootEnabled: ");
-        client.println(RebootEnabled);;
-        client.println("<br />");
-        if(PreBootCounter >= HowManyFailes && RebootEnabled == 0){
-          client.println("NAS was Rebooted<br />NAS Still Down...<br />No Need To Reboot Again...<br />Waiting...");
+        char c = client.read();
+     
+        //read char by char HTTP request
+        if (readString.length() < 100) {
+          //store characters to string
+          readString += c;
+          //Serial.print(c);
+         }
+
+         //if HTTP request has ended
+         if (c == '\n') {          
+          Serial.println(readString); //print to serial monitor for debuging
+          client.println("HTTP/1.1 200 OK"); //send new page
+          client.println("Content-Type: text/html");
+          client.println();     
+          client.println("<HTML>");
+          client.println("<HEAD>");
+          client.println("<meta name='apple-mobile-web-app-capable' content='yes' />");
+          client.println("<meta name='apple-mobile-web-app-status-bar-style' content='black-translucent' />");
+          client.println("<link rel='stylesheet' type='text/css' href='http://randomnerdtutorials.com/ethernetcss.css' />");
+          client.println("<TITLE>The Pinger Finger - Tal Ziv</TITLE>");
+          client.println("</HEAD>");
+          client.println("<H1>The Pinger Finger v1</H1>");
+          client.println("<hr />");
+          client.println("<br />");  
+          client.println("<H2>Status And details</H2>");
           client.println("<br />");
-        }
-        client.println("</html>");
-        break;
-      }
-        if (c == '\n') {
-          // you're starting a new line
-          currentLineIsBlank = true;
-        } else if (c != '\r') {
-          // you've gotten a character on the current line
-          currentLineIsBlank = false;
-        }
-      }
+          client.println("<br />");
+          client.print("My IP: ");
+          client.println(Ethernet.localIP());
+          client.println("<br />");
+          client.println("Ping Destination: 192.168.1.251 <br />");
+          client.print("Web GET DealyInSec: ");
+          client.println(delaySEC);
+          client.println("<br />");
+          client.print("How Many Failes takes to do a Reboot: ");
+          client.println(HowManyFailes);
+          client.println("<br />");
+          client.print("PreBootCounter: ");
+          client.println(PreBootCounter);
+          client.println("<br />");
+          client.print("RebootEnabled: ");
+          client.println(RebootEnabled);
+          client.println("<br /><br />");
+          if(PreBootCounter >= HowManyFailes && RebootEnabled == 0){
+            client.println("NAS was Rebooted<br />NAS Still Down...<br />No Need To Reboot Again...<br />Waiting...");
+            client.println("<br /><br />");
+          }
+          client.println("<a href=\"/?button1on\"\">Hold RESET Button</a>");
+          client.println("<a href=\"/?button1off\"\">Release RESET Button</a><br />");   
+          client.println("<br />");     
+          client.println("<br />"); 
+          client.println("<p>Created by Tal Ziv.</p>");  
+          client.println("<br />"); 
+          client.println("</BODY>");
+          client.println("</HTML>");
+     
+          delay(1);
+          //stopping client
+          client.stop();
+          //controls the Arduino if you press the buttons
+          if (readString.indexOf("?button1on") >0){
+              digitalWrite(relayPin, on);
+          }
+          if (readString.indexOf("?button1off") >0){
+              digitalWrite(relayPin, off);
+          }
+          //clearing string for next read
+          readString="";  
+         }
+       }
     }
-    // give the web browser time to receive the data
-    delay(1);
-    // close the connection:
-    client.stop();
-    Serial.println("client disconnected");
-    }
+}
     interrupts(); // Call to enable interrupts
       // checks if thread should run
     if(ClientThread.shouldRun()){
       ClientThread.run();
     }
   }
-}
 
 
