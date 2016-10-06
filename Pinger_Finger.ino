@@ -33,8 +33,8 @@ IPAddress subnet(255, 255, 255, 0);
 //the IP address is dependent on your network
 IPAddress ip(10, 1, 1, 100);
 //The Ip To Ping
-byte ServerAddr[] = {10, 1, 1, 13}; // ip address to ping
-//char ServerAddr[] = "www.arduino.cc";
+//byte ServerAddr[] = {10, 1, 1, 13}; // ip address to ping
+char ServerAddr[] = "www.arduino.cc";
 // Initialize the Ethernet server library
 // with the IP address and port you want to use
 // (port 80 is default for HTTP):
@@ -58,6 +58,8 @@ int HowManyFailes = 50;
 
 void ClientStart()
 {
+  digitalWrite(ledOk, off);
+  digitalWrite(ledFail, off);
   digitalWrite(ledPing, on);
 }
 
@@ -90,7 +92,7 @@ void httpRequest() {
   client.stop();
 
   // if there's a successful connection:
-  if (client.connect(ServerAddr, 8003)) {
+  if (client.connect(ServerAddr, 80)) {
     Serial.println(F("connected..."));
     // send the HTTP GET request:
     client.println("GET /index.html HTTP/1.1");
